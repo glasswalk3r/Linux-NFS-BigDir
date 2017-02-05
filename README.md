@@ -15,7 +15,6 @@ In short, this syscall will return a data structure, but you probably will want 
 
 How can this be useful? Here are some directions:
 
-
 1. You want to remove all directory content.
 2. You want to remove files from the directory with a pattern in their filename (using regular expressions, for example).
 3. You want to select specific files by their filenames and then test something else (like atime).
@@ -29,4 +28,40 @@ to print the filenames under the directory. By using it, I was able to cleanup d
 instead of many hours.
 
 This module is a Perl implementation of that.
+
+## Install
+
+You should install this module as any Perl module, but before that be sure to execute L<h2ph> before trying to run any function from this module!
+
+In some system, you might need to use the system administrator account to run L<h2ph> or even run some manual steps to fix files locations.
+
+If you got errors like:
+
+```
+Error:  Can't locate bits/syscall.ph in @INC (did you run h2ph?) (@INC contains: /home/me/Projetos/Linux-NFS-BigDir/.build/MHr69O96uB/blib/lib /home/me/Projetos/Linux-NFS-BigDir/.build/MHr69O96uB/blib/arch /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0 /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/5.24.0/x86_64-linux /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/5.24.0 .) at /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/sys/syscall.ph line 9.
+```
+
+It might means that the expected header files are not in the expected standard location. For instance, on a Ubuntu system you might need to create additional links: 
+
+```
+ln -s /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux/x86_64-linux-gnu/bits /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/bits
+```
+
+The baseline here is that perl doesn't expected to have the following sequence of directories under ```site_perl```:
+
+```
+site_perl/
+└── 5.24.0
+    └── x86_64-linux
+        └── x86_64-linux-gnu
+            └── bits
+```
+
+But this is where Ubuntu will keep the header files and ```h2ph``` will not mimic that.
+
+You will have to troubleshoot this by looking at the ```$Config{'installsitearch'}``` to see where are located your .ph files, then check the content of each .ph and compare with the real location of the C header files.
+
+Even though you might be using something like perlbrew (or compiling perl yourself), you will need to use the root account to fix this.
+
+If you got a recipe for your system to fix that (or a permanent, portable solution) please contact me by e-mail so I can include this information here.
 

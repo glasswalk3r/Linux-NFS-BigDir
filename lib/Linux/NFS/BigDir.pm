@@ -5,7 +5,10 @@ use Exporter 'import';
 use Carp;
 use constant BUF_SIZE => 4096;
 use File::Temp 'tempfile';
+use Fcntl;
 require 'syscall.ph';
+
+# VERSION
 
 =pod
 
@@ -82,8 +85,8 @@ undesired effects.
 =cut
 
 sub getdents {
-    my ($dir, $output) = @_;
-    confess "directory $dir is not available" unless (-d $dir);
+    my ( $dir, $output ) = @_;
+    confess "directory $dir is not available" unless ( -d $dir );
     sysopen( my $fd, $dir, O_RDONLY | O_DIRECTORY );
     my @items;
 
@@ -99,7 +102,7 @@ sub getdents {
 
         while ( $read != 0 ) {
             my ( $ino, $off, $len, $name ) = unpack( "L!L!SZ*", $buf );
-            push( ($dir . '/' . $name),  @items);
+            push( @items, ( $dir . '/' . $name ) );
             substr( $buf, 0, $len ) = '';
             $read -= $len;
         }
@@ -109,6 +112,24 @@ sub getdents {
     return @items;
 }
 
+=head1 INSTALL
+
+You should install this module as any Perl module, but before that be sure to execute L<h2ph> before trying to run any function from this module!
+
+In some system, you might need to use the system administrator account to run L<h2ph> or even run some manual steps to fix files locations.
+
+If you got errors like:
+
+    Error:  Can't locate bits/syscall.ph in @INC (did you run h2ph?) (@INC contains: /home/me/Projetos/Linux-NFS-BigDir/.build/MHr69O96uB/blib/lib /home/me/Projetos/Linux-NFS-BigDir/.build/MHr69O96uB/blib/arch /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0 /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/5.24.0/x86_64-linux /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/5.24.0 .) at /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/sys/syscall.ph line 9.
+
+It might means that the expected header files are not in the expected standard location. For instance, on a Ubuntu system you might need to create additional links: 
+
+    ln -s /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux/x86_64-linux-gnu/bits /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/bits
+
+You will have to troubleshoot this by looking at the C<$Config{'installsitearch'}> to see where are located your .ph files, then check the content of each .ph and compare with the real location of the C header files.
+
+Even though you might be using something like perlbrew (or compiling perl yourself), you will need to use the root account to fix this.
+
 =head1 SEE ALSO
 
 =over
@@ -116,6 +137,10 @@ sub getdents {
 =item *
 
 L<pack>
+
+=item *
+
+L<h2ph>.
 
 =item *
 
