@@ -31,9 +31,9 @@ This module is a Perl implementation of that.
 
 ## Install
 
-You should install this module as any Perl module, but before that be sure to execute L<h2ph> before trying to run any function from this module!
+You should install this module as any Perl module, but before that be sure to execute `h2ph` before trying to run any function from this module!
 
-In some system, you might need to use the system administrator account to run L<h2ph> or even run some manual steps to fix files locations.
+In some system, you might need to use the system administrator account to run `h2ph` or even run some manual steps to fix files locations.
 
 If you got errors like:
 
@@ -47,7 +47,7 @@ It might means that the expected header files are not in the expected standard l
 ln -s /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux/x86_64-linux-gnu/bits /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/bits
 ```
 
-The baseline here is that perl doesn't expected to have the following sequence of directories under ```site_perl```:
+The baseline here is that perl doesn't expected to have the following sequence of directories under `site_perl`:
 
 ```
 site_perl/
@@ -57,9 +57,9 @@ site_perl/
             └── bits
 ```
 
-But this is where Ubuntu will keep the header files and ```h2ph``` will not mimic that.
+But this is where Ubuntu will keep the header files and `h2ph` will not mimic that.
 
-You will have to troubleshoot this by looking at the ```$Config{'installsitearch'}``` to see where are located your .ph files, then check the content of each .ph and compare with the real location of the C header files.
+You will have to troubleshoot this by looking at the `$Config{'installsitearch'}` to see where are located your .ph files, then check the content of each .ph and compare with the real location of the C header files.
 
 Even though you might be using something like perlbrew (or compiling perl yourself), you will need to use the root account to fix this.
 
