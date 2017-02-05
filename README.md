@@ -31,6 +31,8 @@ This module is a Perl implementation of that.
 
 ## Install
 
+This distribution will only work in Linux OS with perl version 5.14.4 or higher. Check the dist.ini file for details on that.
+
 You should install this module as any Perl module, but before that be sure to execute `h2ph` before trying to run any function from this module!
 
 In some system, you might need to use the system administrator account to run `h2ph` or even run some manual steps to fix files locations.
@@ -57,11 +59,35 @@ site_perl/
             └── bits
 ```
 
-But this is where Ubuntu will keep the header files and `h2ph` will not mimic that.
+But this is where Ubuntu will keep the header files and `h2ph` will not mimic that. The problem is, your perl `@INC` doesn't have the directory `x86_64-linux-gnu` include on it. You can fix that by changing `@INC` or creating symbolic links (I prefer the later).
 
 You will have to troubleshoot this by looking at the `$Config{'installsitearch'}` to see where are located your .ph files, then check the content of each .ph and compare with the real location of the C header files.
 
-Even though you might be using something like perlbrew (or compiling perl yourself), you will need to use the root account to fix this.
+You might need to run this as root unless you are using something like perlbrew (or compiling perl yourself).
 
 If you got a recipe for your system to fix that (or a permanent, portable solution) please contact me by e-mail so I can include this information here.
 
+### Install receipt
+
+This might work on your environment. This was tested under Ubuntu LTS 16.04.
+
+Open a shell and type the following sequence of commands:
+
+
+```
+default=$(perl -MConfig -E 'say $Config{installsitearch}')
+cd /usr/include
+h2ph * sys/*
+h2ph syscall x86_64-linux-gnu/sys/*
+h2ph syscall x86_64-linux-gnu/bits/*
+h2ph unistd x86_64-linux-gnu/asm/*
+ph_dir=$(find $default -name 'syscall.ph' | sort | tail -1 | sed -e "s#${default}##" | cut -d '/' -f2)
+if [ -z ${ph_dir} ]
+then
+    echo 'Could not define the location of subdirectory with additional .ph files that are required. Check h2ph output'
+    exit 1
+fi
+for sub_dir in bits sys asm; do ln -s -v "${default}/${ph_dir}/${sub_dir}" "${default}/${sub_dir}"; done
+```
+
+I could have tried to avoid using find to define `${ph_dir}`, but there is a inconsistence of values of `$Config{archname}` (from Config module) when you compile a perl with perlbrew with or without threads support.
