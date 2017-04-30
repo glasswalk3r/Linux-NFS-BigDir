@@ -3,10 +3,23 @@ use strict;
 use warnings;
 use Exporter 'import';
 use Carp;
-use constant BUF_SIZE => 4096;
 use File::Temp 'tempfile';
 use Fcntl;
-require 'syscall.ph';
+use Config;
+
+use constant BUF_SIZE => 4096;
+use constant SYS_getdents => do {
+    $_ = $Config{archname};
+    die "unsupported arch $_" unless /linux/;
+    # 64 bits => 78
+    /^x86_64-/ ? 78 :
+    # 32 bits => 141
+    /^i686-/ ? 141 :
+    # TODO
+    die "unsupported arch"
+};
+
+#require 'syscall.ph';
 
 # VERSION
 
@@ -92,7 +105,7 @@ sub getdents {
 
     while (1) {
         my $buf = "\0" x BUF_SIZE;
-        my $read = syscall( &SYS_getdents, fileno($fd), $buf, BUF_SIZE );
+        my $read = syscall( SYS_getdents, fileno($fd), $buf, BUF_SIZE );
 
         if ( ( $read == -1 ) and ( $! != 0 ) ) {
             confess "failed to syscall getdents: $!";
@@ -112,23 +125,19 @@ sub getdents {
     return @items;
 }
 
-=head1 INSTALL
+=head1 ARCH SUPPORT
 
-You should install this module as any Perl module, but before that be sure to execute L<h2ph> before trying to run any function from this module!
+The syscall number for C<getdents> is defined as constants for a limited set of Linux platforms:
 
-In some system, you might need to use the system administrator account to run L<h2ph> or even run some manual steps to fix files locations.
+=over 4
 
-If you got errors like:
+=item C</^x86_64-/>
 
-    Error:  Can't locate bits/syscall.ph in @INC (did you run h2ph?) (@INC contains: /home/me/Projetos/Linux-NFS-BigDir/.build/MHr69O96uB/blib/lib /home/me/Projetos/Linux-NFS-BigDir/.build/MHr69O96uB/blib/arch /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0 /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/5.24.0/x86_64-linux /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/5.24.0 .) at /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/sys/syscall.ph line 9.
+=item C</^i686-/>
 
-It might means that the expected header files are not in the expected standard location. For instance, on a Ubuntu system you might need to create additional links: 
+=back
 
-    ln -s /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/x86_64-linux/x86_64-linux-gnu/bits /home/me/perl5/perlbrew/perls/perl-5.24.0/lib/site_perl/5.24.0/bits
-
-You will have to troubleshoot this by looking at the C<$Config{'installsitearch'}> to see where are located your .ph files, then check the content of each .ph and compare with the real location of the C header files.
-
-Even though you might be using something like perlbrew (or compiling perl yourself), you will need to use the root account to fix this.
+C<Linux::NFS::BigDir> must be patched to add missing platforms.
 
 =head1 SEE ALSO
 
