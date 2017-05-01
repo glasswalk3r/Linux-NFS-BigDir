@@ -3,26 +3,21 @@ use strict;
 use warnings;
 use Exporter 'import';
 use Carp;
-use File::Temp 'tempfile';
 use Fcntl;
 use Config;
 
 use constant BUF_SIZE     => 4096;
 use constant SYS_getdents => do {
-    $_ = $Config{archname};
-    die "unsupported arch $_" unless /linux/;
+    use Inline 0.80 C => <<'...';
+#include <sys/syscall.h>
 
-    # 64 bits => 78
-    /^x86_64-/ ? 78 :
+int _get_syscall_num() {
+      return SYS_getdents;
+}
+...
 
-      # 32 bits => 141
-      /^i686-/ ? 141 :
-
-      # TODO
-      die "unsupported arch";
+    _get_syscall_num();
 };
-
-#require 'syscall.ph';
 
 # VERSION
 
@@ -213,19 +208,11 @@ sub getdents_safe {
     return $counter;
 }
 
-=head1 ARCH SUPPORT
 
-The syscall number for C<getdents> is defined as constants for a limited set of Linux platforms:
+=head1 TO DO
 
-=over 4
-
-=item C</^x86_64-/>
-
-=item C</^i686-/>
-
-=back
-
-C<Linux::NFS::BigDir> must be patched to add missing platforms.
+Create C versions of C<getdents> and C<getdents_safe> with L<Inline::C> to see if they get close to C<readdir>
+speed when running over a B<local> file system (currently they are slower).
 
 =head1 SEE ALSO
 

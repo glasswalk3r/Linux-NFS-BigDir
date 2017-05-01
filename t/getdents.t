@@ -20,6 +20,7 @@ SKIP: {
       unless ( defined($dd) and defined($split) );
 
     my $tmp_dir      = tempdir();
+    note("Temporary directory is $tmp_dir");
     my $num_of_files = 100_000;
     gen_files( $tmp_dir, $num_of_files );
     my $entries_ref = getdents($tmp_dir);
@@ -65,8 +66,8 @@ END {
 
 sub gen_files {
     my ( $tmp_dir, $num_of_files ) = @_;
-    note(
-        'Generating $num_of_files files for testing, this can take a while...');
+    diag(
+        "Generating $num_of_files files for testing, this can take a while...");
     my $old = getcwd;
     chdir($tmp_dir) or die "Can't cd to $tmp_dir: $!";
     my $masterfile = 'masterfile';
