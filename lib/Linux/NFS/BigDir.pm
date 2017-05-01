@@ -7,16 +7,19 @@ use File::Temp 'tempfile';
 use Fcntl;
 use Config;
 
-use constant BUF_SIZE => 4096;
+use constant BUF_SIZE     => 4096;
 use constant SYS_getdents => do {
     $_ = $Config{archname};
     die "unsupported arch $_" unless /linux/;
+
     # 64 bits => 78
     /^x86_64-/ ? 78 :
-    # 32 bits => 141
-    /^i686-/ ? 141 :
-    # TODO
-    die "unsupported arch"
+
+      # 32 bits => 141
+      /^i686-/ ? 141 :
+
+      # TODO
+      die "unsupported arch";
 };
 
 #require 'syscall.ph';
@@ -80,25 +83,26 @@ This module is a Perl implementation of that.
 
 =head1 FUNCTIONS
 
-The sub C<getdents> is exported by demand.
+The sub C<getdents> and C<getdents_safe> are exported on demand.
 
 =cut
 
-our @EXPORT_OK = qw(getdents);
+our @EXPORT_OK = qw(getdents getdents_safe);
 
 =head2 getdents
 
-Expects the full path to the directory as a parameter.
+Expects the complete path to the directory as a parameter.
 
-Returns an array reference with all the fullpath to each of the file inside that directory.
+Returns an array reference with all files inside that directory but the 'dot' files.
 
-Meanwhile simple, you should be careful regarding memory restrictions. If you have too files, you program may try to allocate too much memory, with all the
-undesired effects.
+Meanwhile simple (and probably faster), you should be careful regarding memory restrictions when using this functions.
+
+If you have too many files, you program may try to allocate too much memory, with all the undesired effects. See C<getdents_safe>.
 
 =cut
 
 sub getdents {
-    my ( $dir, $output ) = @_;
+    my $dir = shift;
     confess "directory $dir is not available" unless ( -d $dir );
     sysopen( my $fd, $dir, O_RDONLY | O_DIRECTORY );
     my @items;
@@ -115,14 +119,98 @@ sub getdents {
 
         while ( $read != 0 ) {
             my ( $ino, $off, $len, $name ) = unpack( "L!L!SZ*", $buf );
-            push( @items, ( $dir . '/' . $name ) );
+            push( @items, $name );
             substr( $buf, 0, $len ) = '';
             $read -= $len;
         }
 
     }
 
-    return @items;
+    # removing '.' and '..'
+    shift(@items);
+    shift(@items);
+    return \@items;
+}
+
+=head2 getdents_safe
+
+"Safe" version of C<getdents> because it will write each entry read to a text file instead of storing
+all the entries on memory.
+
+Expects as parameters:
+
+=over
+
+=item *
+
+The complete path to the directory to be read.
+
+=item *
+
+The complete path to the file that will be used to print each entry, one per line. As convenience, all filenames will be
+prepended with the complete path to the directory given as parameter.
+
+=back
+
+The filename given will be created. If it already exists, this function will C<die>.
+
+This function returns the number of files read from the given directory.
+
+=cut
+
+sub getdents_safe {
+    my ( $dir, $output ) = @_;
+    confess "directory $dir is not available" unless ( -d $dir );
+    sysopen( my $fd,  $dir,    O_RDONLY | O_DIRECTORY );
+    sysopen( my $out, $output, O_CREAT | O_RDWR | O_EXCL )
+      or die "Cannot create $output: $!";
+    my $dots    = 0;
+    my $counter = 0;
+
+    while (1) {
+        my $buf = "\0" x BUF_SIZE;
+        my $read = syscall( SYS_getdents, fileno($fd), $buf, BUF_SIZE );
+
+        if ( ( $read == -1 ) and ( $! != 0 ) ) {
+            confess "failed to syscall getdents: $!";
+        }
+
+        last if ( $read == 0 );
+
+        if ( $dots == 2 ) {
+
+            while ( $read != 0 ) {
+                my ( $ino, $off, $len, $name ) = unpack( "L!L!SZ*", $buf );
+                print $out $dir, '/', $name, "\n";
+                $counter++;
+                substr( $buf, 0, $len ) = '';
+                $read -= $len;
+            }
+
+        }
+        else {
+
+            while ( $read != 0 ) {
+                my ( $ino, $off, $len, $name ) = unpack( "L!L!SZ*", $buf );
+
+                unless ( ( $name eq '.' ) or ( $name eq '..' ) ) {
+                    print $out $dir, '/', $name, "\n";
+                    $counter++;
+                }
+                else {
+                    $dots++;
+                }
+
+                substr( $buf, 0, $len ) = '';
+                $read -= $len;
+            }
+
+        }
+
+    }
+
+    close($out);
+    return $counter;
 }
 
 =head1 ARCH SUPPORT
@@ -146,10 +234,6 @@ C<Linux::NFS::BigDir> must be patched to add missing platforms.
 =item *
 
 L<pack>
-
-=item *
-
-L<h2ph>.
 
 =item *
 
