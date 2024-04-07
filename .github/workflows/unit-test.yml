@@ -1,6 +1,14 @@
 ---
 name: Dist::Zilla Action
-on: push
+on:
+  push:
+    paths-ignore:
+      - '*.md'
+      - Makefile
+      - dist.ini
+  pull_request:
+    branches:
+      - main
 
 jobs:
   dzil:
