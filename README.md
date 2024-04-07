@@ -1,4 +1,4 @@
-[![Perl application](https://github.com/glasswalk3r/awsecr/actions/workflows/unit-test.yml/badge.svg)](https://github.com/glasswalk3r/awsecr/actions/workflows/unit-test.yml)
+[![Perl application](https://github.com/glasswalk3r/Linux-NFS-BigDir/actions/workflows/unit-test.yml/badge.svg)](https://github.com/glasswalk3r/Linux-NFS-BigDir/actions/workflows/unit-test.yml)
 
 # Linux-NFS-BigDir
 
