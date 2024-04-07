@@ -31,5 +31,7 @@ This module is a Perl implementation of that.
 
 ## Install
 
-This distribution will only work in Linux OS with perl version 5.14.4 or higher. Check the dist.ini file for details on that.
+This distribution will only work in Linux OS with perl version 5.14.4 or higher.
+
+You will need Distzilla installed first. Check the dist.ini file for details on that.
 
